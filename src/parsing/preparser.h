@@ -754,6 +754,10 @@ class PreParserFactory {
     return PreParserExpression::Default();
   }
 
+  PreParserExpression NewImportMetaExpression(int pos) {
+    return PreParserExpression::Default();
+  }
+
  private:
   // For creating VariableProxy objects (if
   // PreParser::track_unresolved_variables_ is used).

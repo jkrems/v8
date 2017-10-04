@@ -8315,6 +8315,53 @@ TEST(NewTarget) {
 }
 
 
+TEST(ImportMeta) {
+  // clang-format off
+  const char* context_data[][2] = {
+    {"", ""},
+    // {"'use strict';", ""},
+    // {"function f() {", "}"},
+    // {"'use strict'; function f() {", "}"},
+    // {"var f = function() {", "}"},
+    // {"'use strict'; var f = function() {", "}"},
+    // {"({m: function() {", "}})"},
+    // {"'use strict'; ({m: function() {", "}})"},
+    // {"({m() {", "}})"},
+    // {"'use strict'; ({m() {", "}})"},
+    // {"({get x() {", "}})"},
+    // {"'use strict'; ({get x() {", "}})"},
+    // {"({set x(_) {", "}})"},
+    // {"'use strict'; ({set x(_) {", "}})"},
+    // {"class C {m() {", "}}"},
+    // {"class C {get x() {", "}}"},
+    // {"class C {set x(_) {", "}}"},
+    {NULL}
+  };
+
+  const char* data[] = {
+    "import.meta",
+    // "() => { import.meta }",
+    // "() => import.meta",
+    // "if (1) { import.meta }",
+    // "if (1) {} else { import.meta }",
+    // "while (0) { import.meta }",
+    // "do { import.meta } while (0)",
+    NULL
+  };
+
+  // clang-format on
+
+  // RunParserSyncTest(context_data, data, kError);
+  // RunModuleParserSyncTest(context_data, data, kError, NULL, 0, NULL, 0, NULL, 0,
+  //                         true, true);
+  static const ParserFlag flags[] = {kAllowHarmonyDynamicImport};
+  RunParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,
+                    arraysize(flags));
+  // RunModuleParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,
+  //                         arraysize(flags));
+}
+
+
 TEST(ConstSloppy) {
   // clang-format off
   const char* context_data[][2] = {

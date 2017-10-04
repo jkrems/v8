@@ -3496,6 +3496,11 @@ ParserBase<Impl>::ParseDynamicImportExpression(bool* ok) {
   DCHECK(allow_harmony_dynamic_import());
   Consume(Token::IMPORT);
   int pos = position();
+  if (peek() == Token::PERIOD) {
+    ExpectMetaProperty(Token::META, "import.meta", pos, CHECK_OK);
+    return impl()->ExpressionFromLiteral(Token::NULL_LITERAL, pos);
+    // return factory()->NewImportMetaExpression(pos);
+  }
   Expect(Token::LPAREN, CHECK_OK);
   ExpressionT arg = ParseAssignmentExpression(true, CHECK_OK);
   Expect(Token::RPAREN, CHECK_OK);
