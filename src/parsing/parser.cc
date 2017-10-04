@@ -912,9 +912,10 @@ Statement* Parser::ParseModuleItem(bool* ok) {
   }
 
   // We must be careful not to parse a dynamic import expression as an import
-  // declaration.
+  // declaration. Same for import.meta expressions.
   if (next == Token::IMPORT &&
-      (!allow_harmony_dynamic_import() || PeekAhead() != Token::LPAREN)) {
+      (!allow_harmony_dynamic_import() || PeekAhead() != Token::LPAREN) &&
+      (!allow_harmony_dynamic_import() || PeekAhead() != Token::PERIOD)) {
     ParseImportDeclaration(CHECK_OK);
     return factory()->NewEmptyStatement(kNoSourcePosition);
   }

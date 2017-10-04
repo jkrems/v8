@@ -8318,8 +8318,8 @@ TEST(NewTarget) {
 TEST(ImportMeta) {
   // clang-format off
   const char* context_data[][2] = {
-    // {"", ""},
-    // {"'use strict';", ""},
+    {"", ""},
+    {"'use strict';", ""},
     {"function f() {", "}"},
     {"'use strict'; function f() {", "}"},
     {"var f = function() {", "}"},
