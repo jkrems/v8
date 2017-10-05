@@ -1127,7 +1127,7 @@ class ParserBase {
   ExpressionT ParseTemplateLiteral(ExpressionT tag, int start, bool tagged,
                                    bool* ok);
   ExpressionT ParseSuperExpression(bool is_new, bool* ok);
-  ExpressionT ParseDynamicImportExpression(bool* ok);
+  ExpressionT ParseImportExpressions(bool* ok);
   ExpressionT ParseNewTargetExpression(bool* ok);
 
   void ParseFormalParameter(FormalParametersT* parameters, bool* ok);
@@ -3485,7 +3485,7 @@ typename ParserBase<Impl>::ExpressionT ParserBase<Impl>::ParseMemberExpression(
     result = ParseSuperExpression(is_new, CHECK_OK);
   } else if ((allow_harmony_dynamic_import() || allow_harmony_import_meta()) &&
              peek() == Token::IMPORT) {
-    result = ParseDynamicImportExpression(CHECK_OK);
+    result = ParseImportExpressions(CHECK_OK);
   } else {
     result = ParsePrimaryExpression(is_async, CHECK_OK);
   }
@@ -3496,7 +3496,7 @@ typename ParserBase<Impl>::ExpressionT ParserBase<Impl>::ParseMemberExpression(
 
 template <typename Impl>
 typename ParserBase<Impl>::ExpressionT
-ParserBase<Impl>::ParseDynamicImportExpression(bool* ok) {
+ParserBase<Impl>::ParseImportExpressions(bool* ok) {
   DCHECK(allow_harmony_dynamic_import() || allow_harmony_import_meta());
   Consume(Token::IMPORT);
   int pos = position();

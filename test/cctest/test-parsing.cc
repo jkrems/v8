@@ -8350,6 +8350,9 @@ TEST(ImportMeta) {
     "if (1) {} else { import.meta }",
     "while (0) { import.meta }",
     "do { import.meta } while (0)",
+    "import.meta.url",
+    "import.meta[0]",
+    "import.meta.couldBeMutable = true",
     NULL
   };
 
