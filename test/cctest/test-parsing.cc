@@ -8359,6 +8359,7 @@ TEST(ImportMeta) {
   RunModuleParserSyncTest(context_data, data, kError, NULL, 0, NULL, 0, NULL, 0,
                           true, true);
   static const ParserFlag flags[] = {kAllowHarmonyImportMeta};
+  // TODO: according to current proposal, these should early error
   RunParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,
                     arraysize(flags));
   RunModuleParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,
