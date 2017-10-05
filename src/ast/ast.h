@@ -2682,15 +2682,6 @@ class ImportCallExpression final : public Expression {
   Expression* argument_;
 };
 
-// // This AST Node is used to represent reading the meta property of import
-// class ImportMetaExpression final : public Expression {
-//  private:
-//   friend class AstNodeFactory;
-
-//   ImportMetaExpression(int pos)
-//       : Expression(pos, kImportMetaExpression) {}
-// };
-
 // This class is produced when parsing the () in arrow functions without any
 // arguments and is not actually a valid expression.
 class EmptyParentheses final : public Expression {
@@ -3420,10 +3411,6 @@ class AstNodeFactory final BASE_EMBEDDED {
   ImportCallExpression* NewImportCallExpression(Expression* args, int pos) {
     return new (zone_) ImportCallExpression(args, pos);
   }
-
-  // ImportMetaExpression* NewImportMetaExpression(int pos) {
-  //   return new (zone_) ImportMetaExpression(pos);
-  // }
 
   Zone* zone() const { return zone_; }
   void set_zone(Zone* zone) { zone_ = zone; }

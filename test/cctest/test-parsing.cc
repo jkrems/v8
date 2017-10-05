@@ -1291,6 +1291,7 @@ enum ParserFlag {
   kAllowHarmonyDynamicImport,
   kAllowHarmonyAsyncIteration,
   kAllowHarmonyTemplateEscapes,
+  kAllowHarmonyImportMeta,
 };
 
 enum ParserSyncTestResult {
@@ -1308,6 +1309,7 @@ void SetGlobalFlags(i::EnumSet<ParserFlag> flags) {
   i::FLAG_harmony_object_rest_spread =
       flags.Contains(kAllowHarmonyObjectRestSpread);
   i::FLAG_harmony_dynamic_import = flags.Contains(kAllowHarmonyDynamicImport);
+  i::FLAG_harmony_import_meta = flags.Contains(kAllowHarmonyImportMeta);
   i::FLAG_harmony_async_iteration = flags.Contains(kAllowHarmonyAsyncIteration);
   i::FLAG_harmony_template_escapes =
       flags.Contains(kAllowHarmonyTemplateEscapes);
@@ -1325,6 +1327,8 @@ void SetParserFlags(i::PreParser* parser, i::EnumSet<ParserFlag> flags) {
       flags.Contains(kAllowHarmonyObjectRestSpread));
   parser->set_allow_harmony_dynamic_import(
       flags.Contains(kAllowHarmonyDynamicImport));
+  parser->set_allow_harmony_import_meta(
+      flags.Contains(kAllowHarmonyImportMeta));
   parser->set_allow_harmony_async_iteration(
       flags.Contains(kAllowHarmonyAsyncIteration));
   parser->set_allow_harmony_template_escapes(
@@ -8354,7 +8358,7 @@ TEST(ImportMeta) {
   RunParserSyncTest(context_data, data, kError);
   RunModuleParserSyncTest(context_data, data, kError, NULL, 0, NULL, 0, NULL, 0,
                           true, true);
-  static const ParserFlag flags[] = {kAllowHarmonyDynamicImport};
+  static const ParserFlag flags[] = {kAllowHarmonyImportMeta};
   RunParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,
                     arraysize(flags));
   RunModuleParserSyncTest(context_data, data, kSuccess, NULL, 0, flags,

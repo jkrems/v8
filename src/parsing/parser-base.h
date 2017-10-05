@@ -277,6 +277,7 @@ class ParserBase {
         allow_harmony_class_fields_(false),
         allow_harmony_object_rest_spread_(false),
         allow_harmony_dynamic_import_(false),
+        allow_harmony_import_meta_(false),
         allow_harmony_async_iteration_(false),
         allow_harmony_template_escapes_(false) {}
 
@@ -291,6 +292,7 @@ class ParserBase {
   ALLOW_ACCESSORS(harmony_class_fields);
   ALLOW_ACCESSORS(harmony_object_rest_spread);
   ALLOW_ACCESSORS(harmony_dynamic_import);
+  ALLOW_ACCESSORS(harmony_import_meta);
   ALLOW_ACCESSORS(harmony_async_iteration);
   ALLOW_ACCESSORS(harmony_template_escapes);
 
@@ -1495,6 +1497,7 @@ class ParserBase {
   bool allow_harmony_class_fields_;
   bool allow_harmony_object_rest_spread_;
   bool allow_harmony_dynamic_import_;
+  bool allow_harmony_import_meta_;
   bool allow_harmony_async_iteration_;
   bool allow_harmony_template_escapes_;
 
@@ -3480,7 +3483,8 @@ typename ParserBase<Impl>::ExpressionT ParserBase<Impl>::ParseMemberExpression(
   } else if (peek() == Token::SUPER) {
     const bool is_new = false;
     result = ParseSuperExpression(is_new, CHECK_OK);
-  } else if (allow_harmony_dynamic_import() && peek() == Token::IMPORT) {
+  } else if ((allow_harmony_dynamic_import() || allow_harmony_import_meta()) &&
+             peek() == Token::IMPORT) {
     result = ParseDynamicImportExpression(CHECK_OK);
   } else {
     result = ParsePrimaryExpression(is_async, CHECK_OK);
@@ -3493,13 +3497,17 @@ typename ParserBase<Impl>::ExpressionT ParserBase<Impl>::ParseMemberExpression(
 template <typename Impl>
 typename ParserBase<Impl>::ExpressionT
 ParserBase<Impl>::ParseDynamicImportExpression(bool* ok) {
-  DCHECK(allow_harmony_dynamic_import());
+  DCHECK(allow_harmony_dynamic_import() || allow_harmony_import_meta());
   Consume(Token::IMPORT);
   int pos = position();
-  if (peek() == Token::PERIOD) {
+  if (allow_harmony_import_meta() && peek() == Token::PERIOD) {
     ExpectMetaProperty(Token::META, "import.meta", pos, CHECK_OK);
     return impl()->ExpressionFromLiteral(Token::NULL_LITERAL, pos);
-    // return factory()->NewImportMetaExpression(pos);
+  } else if (!allow_harmony_dynamic_import()) {
+    impl()->ReportMessageAt(scanner()->location(),
+                            MessageTemplate::kUnexpectedReserved);
+    *ok = false;
+    return impl()->NullExpression();
   }
   Expect(Token::LPAREN, CHECK_OK);
   ExpressionT arg = ParseAssignmentExpression(true, CHECK_OK);
