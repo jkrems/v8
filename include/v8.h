@@ -1344,6 +1344,31 @@ class V8_EXPORT Module {
 };
 
 /**
+ * A Dynamic JavaScript module
+ */
+class V8_EXPORT DynamicModule: public Module {
+  public:
+    /**
+     * Execution hook for dynamic modules
+     */
+    typedef void (*ExecuteCallback)();
+
+    DynamicModule(Isolate* isolate, ExecuteCallback callback);
+    ~DynamicModule();
+
+    /**
+     * Define the export names of the dynamic module
+     * Must be called during execution
+     */
+    void CreateExports(Isolate* isolate, Local<Array> names);
+
+    /**
+     * Set an export value, corresponding to an export index
+     */
+    void SetExport(int index, Local<Value> value);
+};
+
+/**
  * A compiled JavaScript script, tied to a Context which was active when the
  * script was compiled.
  */

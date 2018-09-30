@@ -8,7 +8,9 @@
 
 namespace {
 
+using v8::Array;
 using v8::Context;
+using v8::DynamicModule;
 using v8::HandleScope;
 using v8::Isolate;
 using v8::Local;
@@ -470,5 +472,68 @@ TEST(ModuleNamespace) {
   }
 
   CHECK(!try_catch.HasCaught());
+}
+
+DynamicModule dynamic;
+// static Local<Module> dep;
+
+void ExecuteDynamicModule() {
+  Isolate* isolate = CcTest::isolate();
+  v8::Local<v8::Array> export_names = v8::Array::New(isolate, 1);
+  Local<String> test_export = v8_str("test");
+  export_names->Set(0, test_export);
+  
+  dynamic->CreateExports(isolate, export_names);
+  dynamic->SetExport(0, test_export);
+}
+
+MaybeLocal<Module> ResolveCallbackDynamicModule(Local<Context> context,
+                                                Local<String> specifier,
+                                                Local<Module> referrer) {
+  Isolate* isolate = CcTest::isolate();
+  if (specifier->StrictEquals(v8_str("dynamic"))) {
+    return dynamic;
+  } /*else if (specifier->StrictEquals(v8_str("./dep.js"))) {
+    return dep2;
+  } */else {
+    isolate->ThrowException(v8_str("boom"));
+    return MaybeLocal<Module>();
+  }
+}
+
+TEST(DynamicModule) {
+  Isolate* isolate = CcTest::isolate();
+  HandleScope scope(isolate);
+  LocalContext env;
+  v8::TryCatch try_catch(isolate);
+
+  Local<v8::Object> ReferenceError =
+      CompileRun("ReferenceError")->ToObject(env.local()).ToLocalChecked();
+
+  Local<String> source_text = v8_str("export {x} from 'dynamic';");
+  ScriptOrigin origin = ModuleOrigin(v8_str("file.js"), CcTest::isolate());
+  ScriptCompiler::Source source(source_text, origin);
+  Local<Module> module =
+      ScriptCompiler::CompileModule(isolate, &source).ToLocalChecked();
+  
+  dynamic = new DynamicModule(CcTest::isolate(), ExecuteDynamicModule);
+
+  CHECK(module
+            ->InstantiateModule(env.local(),
+                                ResolveCallbackDynamicModule)
+            .FromJust());
+  CHECK_EQ(Module::kInstantiated, module->GetStatus());
+  CHECK_EQ(Module::kInstantiated, dynamic->GetStatus());
+  
+  Local<Value> ns = module->GetModuleNamespace();
+  Local<v8::Object> nsobj = ns->ToObject(env.local()).ToLocalChecked();
+
+  CHECK(nsobj->Get(env.local(), v8_str("test")).ToLocalChecked()->IsUndefined());
+  
+  module->Evaluate(env.local()).ToLocalChecked();
+  CHECK_EQ(Module::kEvaluated, module->GetStatus());
+  CHECK_EQ(Module::kEvaluated, dynamic->GetStatus());
+
+  CHECK(nsobj->Get(env.local(), v8_str("test")).ToLocalChecked()->IsUndefined());
 }
 }  // anonymous namespace

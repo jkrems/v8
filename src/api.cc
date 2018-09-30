@@ -2291,6 +2291,92 @@ MaybeLocal<Value> Module::Evaluate(Local<Context> context) {
   RETURN_ESCAPED(result);
 }
 
+DynamicModule::DynamicModule(Isolate* v8_isolate, ExecuteCallback callback) {
+  auto isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
+  i::Factory* factory = isolate->factory();
+  i::ReadOnlyRoots roots(isolate);
+
+  i::Handle<i::ObjectHashTable> exports = i::ObjectHashTable::New(isolate, 10);
+  i::Handle<i::FixedArray> regular_exports = factory->NewFixedArray(10);
+  int requested_modules_length = 0;
+
+  i::Handle<DynamicModule> module = i::Handle<DynamicModule>::cast(i::NewStruct(i::MODULE_TYPE, i::TENURED));
+  module->set_code(roots.undefined_value());
+  module->set_exports(*exports);
+  module->set_regular_exports(*regular_exports);
+  module->set_regular_imports(roots.empty_fixed_array());
+  module->set_hash(isolate->GenerateIdentityHash(Smi::kMaxValue));
+  module->set_module_namespace(roots.undefined_value());
+  module->set_requested_modules(roots.empty_fixed_array());
+  module->set_script(roots.undefined_value());
+  module->set_status(Module::kUninstantiated);
+  module->set_exception(roots.the_hole_value());
+  module->set_import_meta(roots.the_hole_value());
+  module->set_dfs_index(-1);
+  module->set_dfs_ancestor_index(-1);
+  module->set_dynamic_execute(callback);
+  i::Handle<i::HeapObject> object(module->module_namespace(), isolate);
+  return module;
+}
+
+void DynamicModule::CreateExports(Isolate* v8_isolate, Local<Array> names) {
+  DCHECK_EQ(status(), kExecuting);
+
+  auto isolate = reinterpret_cast<i::Isolate*>(v8_isolate);
+  i::ReadOnlyRoots roots(isolate);
+
+  i::Zone zone(isolate->allocator(), ZONE_NAME);
+  i::ZoneForwardList<i::Handle<Module>> stack(&zone);
+
+  int index = 0;
+  i::ZoneVector<i::Handle<Object>> data(
+      i::ModuleInfo::kRegularExportLength * names.length(), zone);
+  for (int i = 0, n = names.length(); i < n; ++i) {
+    i::Handle<i::FixedArray> export_names = v8_isolate->factory()->NewFixedArray(1);
+    data[index + i::ModuleInfo::kRegularExportLocalNameOffset] = names->get(i);
+    data[index + i::ModuleInfo::kRegularExportCellIndexOffset] =
+        i::handle(i::Smi::FromInt(i), isolate);
+    data[index + i::ModuleInfo::kRegularExportExportNamesOffset] = export_names;
+    index += i::ModuleInfo::kRegularExportLength;
+
+    export_names->set(0, names.Get(i));
+  }
+  DCHECK_LE(index, static_cast<int>(data.size()));
+  data.resize(index);
+
+  i::Handle<FixedArray> regular_exports_ = v8_isolate->factory()->NewFixedArray(index);
+  for (int i = 0; i < index; ++i) {
+    result->set(i, *data[i]);
+  }
+
+  i::Handle<i::FixedArray> regular_imports = &roots.empty_fixed_array();
+
+  i::Handle<ModuleInfo> result = isolate->factory()->NewModuleInfo();
+  result->set(kModuleRequestsIndex, roots.empty_fixed_array());
+  result->set(kSpecialExportsIndex, roots.empty_fixed_array());
+  result->set(kRegularExportsIndex, *regular_exports_);
+  result->set(kNamespaceImportsIndex, roots.empty_fixed_array());
+  result->set(kRegularImportsIndex, roots.empty_fixed_array());
+  result->set(kModuleRequestPositionsIndex, roots.empty_fixed_array());
+  info = *result;
+  
+  // assign exports into table
+  for (int i = 0, n = names->length(); i < n; ++i) {
+    i::Handle<String> name(String::cast(names->Get(i)), isolate);
+    DCHECK(exports->Lookup(name)->IsTheHole(isolate));
+    i::Handle<Cell> cell =
+      isolate->factory()->NewCell(isolate->factory()->undefined_value());
+    regular_exports()->set(ExportIndex(i), *cell);
+    exports = i::ObjectHashTable::Put(exports, name, cell);
+  }
+  set_exports(*exports);
+}
+
+DynamicModule::SetExport(int index, Local<Object> value) {
+  DCHECK_GE(status(), kExecuting);
+  StoreVariable(this, index, value);
+}
+
 namespace {
 
 i::Compiler::ScriptDetails GetScriptDetails(
