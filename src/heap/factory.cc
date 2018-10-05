@@ -3049,6 +3049,31 @@ Handle<Module> Factory::NewModule(Handle<SharedFunctionInfo> code) {
   return module;
 }
 
+Handle<Module> Factory::NewDynamicModule() {
+  Handle<ObjectHashTable> exports = ObjectHashTable::New(isolate(), 0);
+  Handle<FixedArray> regular_exports = empty_fixed_array();
+  Handle<FixedArray> regular_imports = empty_fixed_array();
+  Handle<FixedArray> requested_modules = empty_fixed_array();
+
+  ReadOnlyRoots roots(isolate());
+  Handle<Module> module = Handle<Module>::cast(NewStruct(MODULE_TYPE, TENURED));
+  // module->set_code(*code);
+  module->set_exports(*exports);
+  module->set_regular_exports(*regular_exports);
+  module->set_regular_imports(*regular_imports);
+  module->set_hash(isolate()->GenerateIdentityHash(Smi::kMaxValue));
+  module->set_module_namespace(roots.undefined_value());
+  module->set_requested_modules(*requested_modules);
+  // module->set_script(Script::cast(code->script()));
+  // TODO: This should most likely start as Instantiated
+  module->set_status(Module::kUninstantiated);
+  module->set_exception(roots.the_hole_value());
+  module->set_import_meta(roots.the_hole_value());
+  module->set_dfs_index(-1);
+  module->set_dfs_ancestor_index(-1);
+  return module;
+}
+
 Handle<JSArrayBuffer> Factory::NewJSArrayBuffer(SharedFlag shared,
                                                 PretenureFlag pretenure) {
   Handle<JSFunction> array_buffer_fun(

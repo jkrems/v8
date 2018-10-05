@@ -1346,26 +1346,23 @@ class V8_EXPORT Module {
 /**
  * A Dynamic JavaScript module
  */
-class V8_EXPORT DynamicModule: public Module {
+class V8_EXPORT DynamicModule {
   public:
     /**
-     * Execution hook for dynamic modules
+     * Define the export names of the dynamic module.
+     *
+     * Must be called during execution.
      */
-    typedef void (*ExecuteCallback)();
-
-    DynamicModule(Isolate* isolate, ExecuteCallback callback);
-    ~DynamicModule();
+    void CreateExports(Local<Array> names);
 
     /**
-     * Define the export names of the dynamic module
-     * Must be called during execution
-     */
-    void CreateExports(Isolate* isolate, Local<Array> names);
-
-    /**
-     * Set an export value, corresponding to an export index
+     * Set an export value, corresponding to an export index.
+     *
+     * Maps to SetDynamicExportBinding in the spec.
      */
     void SetExport(int index, Local<Value> value);
+
+    Local<Module> GetModule();
 };
 
 /**
@@ -1690,6 +1687,13 @@ class V8_EXPORT ScriptCompiler {
       Isolate* isolate, Source* source,
       CompileOptions options = kNoCompileOptions,
       NoCacheReason no_cache_reason = kNoCacheNoReason);
+
+  /**
+   * Create a dynamic module that can define its exports during evaluation but
+   * cannot have dependencies of its own.
+   */
+  static V8_WARN_UNUSED_RESULT MaybeLocal<Module> CreateDynamicModule(
+      Isolate* isolate, Source* source);
 
   /**
    * Compile a function for a given context. This is equivalent to running
