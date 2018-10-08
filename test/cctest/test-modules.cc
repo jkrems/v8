@@ -504,18 +504,24 @@ TEST(ModuleNamespace) {
 TEST(DynamicModule) {
   Isolate* isolate = CcTest::isolate();
   HandleScope scope(isolate);
-  // LocalContext env;
+  LocalContext env;
   // v8::TryCatch try_catch(isolate);
 
-  Local<String> source_text =
-      v8_str("ignored");
+  Local<String> source_text = v8_str("print('Hello');");
   ScriptOrigin origin = ModuleOrigin(v8_str("dyn.js"), CcTest::isolate());
   ScriptCompiler::Source source(source_text, origin);
-  MaybeLocal<v8::Module> m =
+  MaybeLocal<v8::Module> maybe_module =
       ScriptCompiler::CreateDynamicModule(isolate, &source);
-  CHECK(!m.IsEmpty());
+  CHECK(!maybe_module.IsEmpty());
 
-  // - It should start out instantiated
+  Local<v8::Module> dynamic;
+  CHECK(maybe_module.ToLocal(&dynamic));
+
+  CHECK(dynamic->InstantiateModule(env.local(), ResolveCallback).FromJust());
+
+  dynamic->Evaluate(env.local()).ToLocalChecked();
+
+  // - It should start out  instantiated
   // - Calling evaluate should invoke the host callback
   // - Afterwards it should have exports
   // - Afterwards its namespace objects should show exports

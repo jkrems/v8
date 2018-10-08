@@ -2504,8 +2504,23 @@ MaybeLocal<Module> ScriptCompiler::CompileModule(
 
 MaybeLocal<Module> ScriptCompiler::CreateDynamicModule(
     Isolate* isolate, Source* source) {
+  CompileOptions options = kNoCompileOptions;
+  NoCacheReason no_cache_reason = kNoCacheNoReason;
+  CHECK(options == kNoCompileOptions || options == kConsumeCodeCache);
+
   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(isolate);
-  return ToApiHandle<Module>(i_isolate->factory()->NewDynamicModule());
+
+  Utils::ApiCheck(source->GetResourceOptions().IsModule(),
+                  "v8::ScriptCompiler::CompileModule",
+                  "Invalid ScriptOrigin: is_module must be true");
+  auto maybe =
+      CompileUnboundInternal(isolate, source, options, no_cache_reason);
+  Local<UnboundScript> unbound;
+  if (!maybe.ToLocal(&unbound)) return MaybeLocal<Module>();
+
+  i::Handle<i::SharedFunctionInfo> shared = Utils::OpenHandle(*unbound);
+  return ToApiHandle<Module>(i_isolate->factory()->NewModule(shared));
+  // return ToApiHandle<Module>(i_isolate->factory()->NewDynamicModule());
 }
 
 

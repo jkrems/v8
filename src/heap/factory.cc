@@ -3055,6 +3055,9 @@ Handle<Module> Factory::NewDynamicModule() {
   Handle<FixedArray> regular_imports = empty_fixed_array();
   Handle<FixedArray> requested_modules = empty_fixed_array();
 
+  // TODO: Create code that causes a call into the host callback
+  // Handle<Code> code;
+
   ReadOnlyRoots roots(isolate());
   Handle<Module> module = Handle<Module>::cast(NewStruct(MODULE_TYPE, TENURED));
   // module->set_code(*code);
